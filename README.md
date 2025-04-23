@@ -36,7 +36,7 @@ pip install pygame
 - Each pipe you pass scores +1 point.
 - Press **ESC** at any time to quit.
 
-![Gameplay Preview](./screenshot.png)
+![Gameplay Preview](https://i.imgur.com/wkYJ1Wu.png)
 
 ---
 
