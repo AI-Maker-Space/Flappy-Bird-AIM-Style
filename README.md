@@ -17,21 +17,6 @@ Welcome to the ultimate AI-themed flap-athon. Guide our bold AI bird through an 
 
 ## ⚙️ Setup & Installation
 
-### 🔧 Using uv (recommended)
-1. Install **uv** globally (if you haven’t already):
-   ```bash
-   pip install uv
-   ```
-2. Clone this repo & sync dependencies:
-   ```bash
-   git clone https://github.com/yourusername/ai-makerspace-flappy-bird.git
-   cd ai-makerspace-flappy-bird
-   uv install
-   ```
-3. Activate the virtual environment:
-   ```bash
-   uv shell
-   ```
 
 ### 🐍 Using venv (alternative)
 ```bash
