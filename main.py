@@ -10,7 +10,7 @@ WIDTH = 400
 HEIGHT = 600
 FPS = 60
 GRAVITY = 0.4
-FLAP_STRENGTH = -12
+FLAP_STRENGTH = -8  # Reduced flap strength for gentler bounce
 PIPE_SPEED = -2
 PIPE_GAP = 180
 PIPE_FREQUENCY = 2000  # milliseconds
@@ -20,6 +20,13 @@ BG_COLOUR = (20, 20, 20)
 BIRD_COLOUR = (50, 200, 250)
 PIPE_COLOUR = (0, 200, 100)
 TEXT_COLOUR = (230, 230, 230)
+ 
+# Enhanced graphics settings
+BG_TOP = (135, 206, 235)       # Sky blue top for gradient
+BG_BOTTOM = (255, 255, 255)    # White bottom for gradient
+GROUND_COLOUR = (34, 139, 34)  # Forest green ground
+GROUND_HEIGHT = 50             # Height of ground at bottom
+PIPE_BORDER_COLOUR = (0, 150, 75)  # Border colour for pipes
 
 HS_FILE = "highscore.txt"
 
@@ -58,12 +65,16 @@ class Bird:
                            self.radius * 2, self.radius * 2)
 
     def draw(self, surface):
-        pygame.draw.circle(surface, BIRD_COLOUR, (int(self.x), int(self.y)), self.radius)
-        # Draw "AI" on bird
-        font = pygame.font.SysFont(None, 24)
-        text = font.render("AI", True, BG_COLOUR)
-        text_rect = text.get_rect(center=(int(self.x), int(self.y)))
-        surface.blit(text, text_rect)
+        x, y, r = int(self.x), int(self.y), self.radius
+        # Draw bird as a triangle pointing right
+        points = [(x - r, y + r), (x - r, y - r), (x + r, y)]
+        pygame.draw.polygon(surface, BIRD_COLOUR, points)
+        # Draw eye
+        eye_radius = r // 5
+        eye_x = x + r // 2
+        eye_y = y - r // 2
+        pygame.draw.circle(surface, (255, 255, 255), (eye_x, eye_y), eye_radius)
+        pygame.draw.circle(surface, (0, 0, 0), (eye_x, eye_y), eye_radius // 2)
 
 class Pipe:
     def __init__(self, x):
@@ -83,8 +94,11 @@ class Pipe:
         top_rect = pygame.Rect(self.x, 0, 50, self.height)
         # Bottom pipe
         bottom_rect = pygame.Rect(self.x, self.height + PIPE_GAP, 50, HEIGHT - (self.height + PIPE_GAP))
+        # Draw pipes with border for depth effect
         pygame.draw.rect(surface, PIPE_COLOUR, top_rect)
+        pygame.draw.rect(surface, PIPE_BORDER_COLOUR, top_rect, width=3)
         pygame.draw.rect(surface, PIPE_COLOUR, bottom_rect)
+        pygame.draw.rect(surface, PIPE_BORDER_COLOUR, bottom_rect, width=3)
 
     def collides_with(self, bird):
         bird_rect = bird.get_rect()
@@ -92,26 +106,65 @@ class Pipe:
         bottom_rect = pygame.Rect(self.x, self.height + PIPE_GAP, 50, HEIGHT - (self.height + PIPE_GAP))
         return bird_rect.colliderect(top_rect) or bird_rect.colliderect(bottom_rect)
 
-def draw_text(surface, text, size, x, y, centre=True):
-    font = pygame.font.SysFont(None, size)
-    txt_surf = font.render(text, True, TEXT_COLOUR)
-    txt_rect = txt_surf.get_rect()
+def draw_text(surface, text, size, x, y, centre=True, colour=None, bold=False):
+    """Render text with optional colour, bold style, and a drop shadow for readability."""
+    if colour is None:
+        colour = TEXT_COLOUR
+    # Create font (optional bold)
+    font = pygame.font.SysFont(None, size, bold=bold)
+    # Render text and shadow surfaces
+    text_surf = font.render(text, True, colour)
+    shadow_surf = font.render(text, True, (0, 0, 0))
+    # Positioning
+    text_rect = text_surf.get_rect()
     if centre:
-        txt_rect.center = (x, y)
+        text_rect.center = (x, y)
     else:
-        txt_rect.topleft = (x, y)
-    surface.blit(txt_surf, txt_rect)
+        text_rect.topleft = (x, y)
+    # Draw drop shadow
+    shadow_rect = text_rect.copy()
+    shadow_offset = 2
+    shadow_rect.x += shadow_offset
+    shadow_rect.y += shadow_offset
+    surface.blit(shadow_surf, shadow_rect)
+    # Draw main text
+    surface.blit(text_surf, text_rect)
+
+def draw_gradient_background(surface):
+    """Draw a vertical gradient background and ground."""
+    for y in range(HEIGHT - GROUND_HEIGHT):
+        ratio = y / (HEIGHT - GROUND_HEIGHT)
+        r = int(BG_TOP[0] * (1 - ratio) + BG_BOTTOM[0] * ratio)
+        g = int(BG_TOP[1] * (1 - ratio) + BG_BOTTOM[1] * ratio)
+        b = int(BG_TOP[2] * (1 - ratio) + BG_BOTTOM[2] * ratio)
+        pygame.draw.line(surface, (r, g, b), (0, y), (WIDTH, y))
+    pygame.draw.rect(surface, GROUND_COLOUR, (0, HEIGHT - GROUND_HEIGHT, WIDTH, GROUND_HEIGHT))
 
 def show_menu(screen):
-    screen.fill(BG_COLOUR)
-    draw_text(screen, "AI Makerspace Flappy Bird", 36, WIDTH//2, HEIGHT//3)
+    draw_gradient_background(screen)
+    # Title with AI Makerspace flair: bold, coloured, larger size
+    draw_text(screen,
+              "AI Makerspace Flappy Bird",
+              48,
+              WIDTH//2,
+              HEIGHT//3,
+              colour=BIRD_COLOUR,
+              bold=True)
+    # Instructions
     draw_text(screen, "Press SPACE to start", 24, WIDTH//2, HEIGHT//2)
     draw_text(screen, "Press ESC to quit", 18, WIDTH//2, HEIGHT//2 + 40)
     pygame.display.flip()
 
 def show_game_over(screen, score, highscore):
-    screen.fill(BG_COLOUR)
-    draw_text(screen, "Game Over", 48, WIDTH//2, HEIGHT//3)
+    draw_gradient_background(screen)
+    # Game Over title with AI Makerspace flair
+    draw_text(screen,
+              "Game Over",
+              48,
+              WIDTH//2,
+              HEIGHT//3,
+              colour=BIRD_COLOUR,
+              bold=True)
     draw_text(screen, f"Score: {score}", 24, WIDTH//2, HEIGHT//2)
     draw_text(screen, f"High Score: {highscore}", 24, WIDTH//2, HEIGHT//2 + 40)
     draw_text(screen, "Press SPACE to play again", 20, WIDTH//2, HEIGHT//2 + 100)
@@ -184,7 +237,7 @@ def main():
                     running = False
 
             # Draw
-            screen.fill(BG_COLOUR)
+            draw_gradient_background(screen)
             for pipe in pipes:
                 pipe.draw(screen)
             bird.draw(screen)
