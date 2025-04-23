@@ -9,11 +9,11 @@ import os
 WIDTH = 400
 HEIGHT = 600
 FPS = 60
-GRAVITY = 0.5
-FLAP_STRENGTH = -10
-PIPE_SPEED = -3
-PIPE_GAP = 150
-PIPE_FREQUENCY = 1500  # milliseconds
+GRAVITY = 0.4
+FLAP_STRENGTH = -12
+PIPE_SPEED = -2
+PIPE_GAP = 180
+PIPE_FREQUENCY = 2000  # milliseconds
 
 # Colours (Canadian spelling)
 BG_COLOUR = (20, 20, 20)
@@ -126,90 +126,92 @@ def main():
 
     highscore = load_highscore()
 
-    # Menu loop
-    in_menu = True
-    while in_menu:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    in_menu = False
-                elif event.key == pygame.K_ESCAPE:
+    while True:
+        # Menu loop
+        in_menu = True
+        while in_menu:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-        show_menu(screen)
-        clock.tick(FPS)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        in_menu = False
+                    elif event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+            show_menu(screen)
+            clock.tick(FPS)
 
-    # Game variables
-    bird = Bird(WIDTH//4, HEIGHT//2)
-    pipes = []
-    score = 0
+        # Game variables
+        bird = Bird(WIDTH // 4, HEIGHT // 2)
+        pipes = []
+        score = 0
 
-    SPAWNPIPE = pygame.USEREVENT + 1
-    pygame.time.set_timer(SPAWNPIPE, PIPE_FREQUENCY)
+        SPAWNPIPE = pygame.USEREVENT + 1
+        pygame.time.set_timer(SPAWNPIPE, PIPE_FREQUENCY)
 
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        # Game loop
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == SPAWNPIPE:
+                    pipes.append(Pipe(WIDTH))
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        bird.flap()
+                    elif event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+
+            # Update
+            bird.update()
+            for pipe in pipes:
+                pipe.update()
+                if not pipe.passed and pipe.x + 50 < bird.x:
+                    score += 1
+                    pipe.passed = True
+            pipes = [p for p in pipes if not p.off_screen()]
+
+            # Check collisions
+            if bird.y - bird.radius <= 0 or bird.y + bird.radius >= HEIGHT:
                 running = False
-            if event.type == SPAWNPIPE:
-                pipes.append(Pipe(WIDTH))
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    bird.flap()
-                elif event.key == pygame.K_ESCAPE:
+            for pipe in pipes:
+                if pipe.collides_with(bird):
                     running = False
 
-        # Update
-        bird.update()
-        for pipe in pipes:
-            pipe.update()
-            if not pipe.passed and pipe.x + 50 < bird.x:
-                score += 1
-                pipe.passed = True
-        pipes = [p for p in pipes if not p.off_screen()]
+            # Draw
+            screen.fill(BG_COLOUR)
+            for pipe in pipes:
+                pipe.draw(screen)
+            bird.draw(screen)
+            draw_text(screen, f"Score: {score}", 24, 10, 10, centre=False)
+            pygame.display.flip()
+            clock.tick(FPS)
 
-        # Check collisions
-        if bird.y - bird.radius <= 0 or bird.y + bird.radius >= HEIGHT:
-            running = False
-        for pipe in pipes:
-            if pipe.collides_with(bird):
-                running = False
+        # Game over
+        if score > highscore:
+            highscore = score
+            save_highscore(highscore)
+        show_game_over(screen, score, highscore)
 
-        # Draw
-        screen.fill(BG_COLOUR)
-        for pipe in pipes:
-            pipe.draw(screen)
-        bird.draw(screen)
-        draw_text(screen, f"Score: {score}", 24, 10, 10, centre=False)
-        pygame.display.flip()
-        clock.tick(FPS)
-
-    # Game over
-    if score > highscore:
-        highscore = score
-        save_highscore(highscore)
-    show_game_over(screen, score, highscore)
-
-    # Wait for restart or quit
-    waiting = True
-    while waiting:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                waiting = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    main()
-                    return
-                elif event.key == pygame.K_ESCAPE:
-                    waiting = False
-        clock.tick(FPS)
-
-    pygame.quit()
-    sys.exit()
+        # Wait for restart or quit
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        waiting = False
+                    elif event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+            clock.tick(FPS)
 
 if __name__ == "__main__":
     main()
