@@ -17,7 +17,7 @@ PIPE_FREQUENCY = 2000  # milliseconds
 
 # Colours (Canadian spelling)
 BG_COLOUR = (20, 20, 20)
-BIRD_COLOUR = (50, 200, 250)
+BIRD_COLOUR = (0, 255, 0)  # Changed bird colour to green
 PIPE_COLOUR = (0, 200, 100)
 TEXT_COLOUR = (230, 230, 230)
  
